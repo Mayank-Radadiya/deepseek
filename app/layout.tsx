@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Deepseek",
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased max-h-screen`}>{children}</body>
+      <ClerkProvider>
+        <body className={`antialiased max-h-screen`}>{children}</body>
+      </ClerkProvider>
     </html>
   );
 }
