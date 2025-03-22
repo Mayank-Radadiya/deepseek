@@ -49,6 +49,7 @@ const PromptBox = ({}: PromptBoxProps) => {
               className="cursor-pointer"
             />
             <button
+              type="submit"
               className={cn(
                 "text-white text-sm font-semibold rounded-full px-2 py-2",
                 prompt.length > 0

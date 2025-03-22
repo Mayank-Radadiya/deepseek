@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useClerk, UserButton, useUser } from "@clerk/nextjs";
 import ChatButton from "./ChatButton";
+import ChatLabel from "./ChatLabel";
 
 export function AppSidebar() {
   const { openSignIn } = useClerk();
@@ -62,6 +63,7 @@ export function AppSidebar() {
               </p>
               <div className="h-[500px] w-full overflow-scroll flex flex-col gap-2 px-3">
                 {/* //! history of user chat.... */}
+                <ChatLabel />
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
