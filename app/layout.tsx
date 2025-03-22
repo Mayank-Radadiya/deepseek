@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { AppProvider } from "@/context/AppContext";
 
 export const metadata: Metadata = {
   title: "Deepseek",
@@ -21,7 +22,9 @@ export default function RootLayout({
           baseTheme: dark,
         }}
       >
-        <body className={`antialiased max-h-screen`}>{children}</body>
+        <AppProvider>
+          <body className={`antialiased max-h-screen`}>{children}</body>
+        </AppProvider>
       </ClerkProvider>
     </html>
   );

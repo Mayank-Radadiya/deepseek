@@ -19,10 +19,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useClerk, UserButton, useUser } from "@clerk/nextjs";
 import ChatButton from "./ChatButton";
 
 export function AppSidebar() {
+  const { openSignIn } = useClerk();
   const { open } = useSidebar();
   const { user } = useUser(); // Get the current user client-side
 
@@ -126,8 +127,21 @@ export function AppSidebar() {
             </Tooltip>
           </TooltipProvider>
 
-          <div className="transform hover:scale-110 transition-transform duration-300 flex gap-x-5 items-center">
-            <UserButton />
+          <div
+            onClick={user ? undefined : () => openSignIn()}
+            className="transform hover:scale-110 hover:opacity-80 transition-transform duration-300 flex gap-x-5 items-center"
+          >
+            {user ? (
+              <UserButton />
+            ) : (
+              <Image
+                src={assets.profile_icon}
+                alt="Profile Icon"
+                height={25}
+                width={25}
+                className="transform hover:scale-110 transition-transform duration-300"
+              />
+            )}
             {open && <p className="text-sm font-semibold">My Profile</p>}
           </div>
         </div>
