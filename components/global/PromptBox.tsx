@@ -4,9 +4,8 @@ import { assets } from "@/public/assets";
 import Image from "next/image";
 import { useState } from "react";
 
-interface PromptBoxProps {}
 
-const PromptBox = ({}: PromptBoxProps) => {
+const PromptBox = () => {
   const [prompt, setPrompt] = useState<string>("");
   return (
     <>

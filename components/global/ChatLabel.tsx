@@ -104,8 +104,8 @@ const ChatLabel = () => {
                 </>
               ) : (
                 <span className="text-zinc-500">
-                  "This action cannot be undone. This will permanently delete
-                  your chat and remove your data from our servers."
+                  This action cannot be undone. This will permanently delete
+                  your chat and remove your data from our servers.
                 </span>
               )}
             </DialogDescription>
