@@ -5,8 +5,16 @@ import { WebhookEvent } from "@clerk/nextjs/server"; // Type definition for Cler
 import User from "@/model/User.model"; // Our User database model
 import dbConnect from "@/config/db/db.config"; // Database connection function
 
-// Background processing function to handle DB operations asynchronously
-async function processEventAsync(eventType: string, data: any) {
+// Define a type for the webhook event data
+interface WebhookEventData {
+  id: string;
+  name: string;
+  email: string;
+  image_url?: string;
+}
+
+// Background processing function with typed data
+async function processEventAsync(eventType: string, data: WebhookEventData) {
   try {
     // Ensure database connection is established before any operation
     await dbConnect();
@@ -100,13 +108,13 @@ export async function POST(req: Request) {
     image_url?: string;
   };
 
-  // Prepare data for processing
-  const eventData = {
+  // Prepare data for processing with explicit typing
+  const eventData: WebhookEventData = {
     id: userData.id,
     name:
       `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
       "Unnamed User",
-    email: userData.email_addresses[0]?.email_address,
+    email: userData.email_addresses[0]?.email_address ?? "", // Fallback to empty string if undefined
     image_url: userData.image_url,
   };
 
