@@ -15,35 +15,37 @@ interface WebhookEventData {
 
 // Background processing function with typed data
 async function processEventAsync(eventType: string, data: WebhookEventData) {
+  console.log(`Starting async processing for event: ${eventType}, data:`, data);
+
   try {
-    // Ensure database connection is established before any operation
+    // Ensure database connection is established
     await dbConnect();
-    console.log("Database connected for async processing");
+    console.log("Database connection established successfully");
 
     switch (eventType) {
       case "user.created": {
-        await User.create({
+        const newUser = await User.create({
           _id: data.id,
           name: data.name,
           email: data.email,
           image: data.image_url,
         });
-        console.log("User created:", data.id);
+        console.log("User created successfully:", newUser);
         break;
       }
       case "user.updated": {
-        await User.updateOne(
+        const updateResult = await User.updateOne(
           { _id: data.id },
           {
             $set: { name: data.name, email: data.email, image: data.image_url },
           }
         );
-        console.log("User updated:", data.id);
+        console.log("User update result:", updateResult);
         break;
       }
       case "user.deleted": {
-        await User.deleteOne({ _id: data.id });
-        console.log("User deleted:", data.id);
+        const deleteResult = await User.deleteOne({ _id: data.id });
+        console.log("User delete result:", deleteResult);
         break;
       }
       default:
@@ -51,6 +53,7 @@ async function processEventAsync(eventType: string, data: WebhookEventData) {
     }
   } catch (error) {
     console.error(`Error in async processing for ${eventType}:`, error);
+    throw error; // Re-throw to ensure the .catch in POST handler catches it
   }
 }
 
@@ -62,6 +65,7 @@ export async function POST(req: Request) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
 
   if (!SIGNING_SECRET) {
+    console.error("Missing SIGNING_SECRET");
     throw new Error("Error: Please add SIGNING_SECRET from Clerk to .env");
   }
 
@@ -76,6 +80,7 @@ export async function POST(req: Request) {
 
   // Check for required Svix headers
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error("Missing Svix headers");
     return new Response("Error: Missing Svix headers", { status: 400 });
   }
 
@@ -114,7 +119,7 @@ export async function POST(req: Request) {
     name:
       `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
       "Unnamed User",
-    email: userData.email_addresses[0]?.email_address ?? "", // Fallback to empty string if undefined
+    email: userData.email_addresses[0]?.email_address ?? "",
     image_url: userData.image_url,
   };
 
@@ -128,9 +133,14 @@ export async function POST(req: Request) {
   }
 
   // Start background processing and return response immediately
-  processEventAsync(eventType, eventData).catch((err) => {
-    console.error("Failed to start async processing:", err);
-  });
+  processEventAsync(eventType, eventData)
+    .then(() =>
+      console.log(`Async processing started successfully for ${eventType}`)
+    )
+    .catch((err) => {
+      console.error(`Failed to process ${eventType} in background:`, err);
+    });
 
+  console.log(`Returning response for ${eventType}`);
   return new Response(`Webhook received: ${eventType}`, { status: 200 });
 }
