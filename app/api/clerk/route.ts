@@ -100,8 +100,7 @@ export async function POST(req: Request) {
     image_url: userData.image_url, // Profile image URL, if provided
   };
 
-  // Log the prepared event data for debugging
-  console.log("EventData prepared:", eventData);
+
 
   // Validate that an email is provided for create/update events
   if (
@@ -156,20 +155,6 @@ export async function POST(req: Request) {
         console.log("User updated:", updatedUser); // Log the updated user document
         break;
 
-      case "user.deleted":
-        // Delete a user from the database by Clerk ID
-        const deletedUser = await User.findOneAndDelete({
-          clerkUserId: eventData.id,
-        });
-
-        if (deletedUser) {
-          console.log("User deleted:", eventData.id); // Log success if user was deleted
-        } else {
-          console.log("User not found for deletion:", eventData.id); // Log if user wasn’t found
-        }
-        break;
-
-      default:
         // Handle any unrecognized event types
         console.warn("Unhandled event type:", eventType); // Log a warning
         // Return a 200 response indicating the event type isn’t supported
