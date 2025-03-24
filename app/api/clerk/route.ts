@@ -1,16 +1,16 @@
 // Importing necessary tools and dependencies
 import { Webhook } from "svix"; // Svix library for verifying webhook signatures from Clerk
-import { headers } from "next/headers"; // Next.js utility to access HTTP request headers
+import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server"; // Type definitions for Clerk webhook events
-import User from "@/model/User.model"; // Mongoose model representing the User collection in MongoDB
-import dbConnect from "@/config/db/db.config"; // Function to connect to the MongoDB database
+import User from "@/model/User.model";
+import dbConnect from "@/config/db/db.config";
 
 // Define a type for the webhook event data to ensure type safety and consistency
 interface WebhookEventData {
-  id: string; // Unique identifier for the user (from Clerk)
-  name: string; // Full name of the user
-  email: string; // User's email address
-  image_url?: string; // Optional URL for the user's profile image
+  id: string;
+  name: string;
+  email: string;
+  image_url?: string;
 }
 
 // API endpoint to handle POST requests from Clerk webhooks
@@ -23,7 +23,6 @@ export async function POST(req: Request) {
   // Check if the signing secret is missing, which is required for verification
   if (!SIGNING_SECRET) {
     console.error("Missing SIGNING_SECRET"); // Log the error for debugging
-    // Return a 500 error response indicating a server configuration issue
     return new Response(
       JSON.stringify({ error: "Server configuration error" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
@@ -63,9 +62,7 @@ export async function POST(req: Request) {
     }) as WebhookEvent; // Cast the verified result to WebhookEvent type
     console.log("Webhook verified:", evt.type); // Log successful verification with event type
   } catch (err) {
-    // Handle verification failure (e.g., invalid signature)
-    console.error("Webhook verification failed:", err); // Log the error
-    // Return a 400 error response if verification fails
+    console.error("Webhook verification failed:", err);
     return new Response(
       JSON.stringify({ error: "Webhook verification failed" }),
       { status: 400, headers: { "Content-Type": "application/json" } }
@@ -82,9 +79,6 @@ export async function POST(req: Request) {
     email_addresses: { email_address: string }[]; // Array of email addresses
     image_url?: string; // Optional profile image URL
   };
-
-  // Log the raw user data from the webhook for debugging
-  console.log("Userdata", userData);
 
   // Ensure the user ID is present, as it’s required for all operations
   if (!userData.id) {
@@ -164,7 +158,10 @@ export async function POST(req: Request) {
 
       case "user.deleted":
         // Delete a user from the database by Clerk ID
-        const deletedUser = await User.findOneAndDelete({ _id: eventData.id });
+        const deletedUser = await User.findOneAndDelete({
+          clerkUserId: eventData.id,
+        });
+
         if (deletedUser) {
           console.log("User deleted:", eventData.id); // Log success if user was deleted
         } else {
