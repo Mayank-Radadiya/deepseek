@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { unique } from "next/dist/build/utils";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -17,7 +16,7 @@ const UserSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    image: {
+    image_url: {
       type: String,
     },
   },
