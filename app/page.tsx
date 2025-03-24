@@ -32,7 +32,7 @@ export default function Home() {
                   width={60}
                   alt="logo"
                 />
-                <h1 className="text-3xl">Hi,  I&apos;m Deepseek.</h1>
+                <h1 className="text-3xl">Hi, I&apos;m Deepseek.</h1>
               </div>
               <p className="text-sm font-semibold text-slate-400">
                 How can i help you today?

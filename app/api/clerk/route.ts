@@ -77,6 +77,8 @@ export async function POST(req: Request) {
     email_addresses: { email_address: string }[];
     image_url?: string;
   };
+  
+  console.log("Userdata", userData);
 
   // Validate user ID presence
   if (!userData.id) {
