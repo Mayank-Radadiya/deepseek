@@ -1,26 +1,23 @@
-// Importing necessary tools and dependencies
-import { Webhook } from "svix"; // Svix library for webhook verification
-import { headers } from "next/headers"; // Next.js headers utility
-import { WebhookEvent } from "@clerk/nextjs/server"; // Clerk webhook event types
-import User from "@/model/User.model"; // User model for database operations
-import dbConnect from "@/config/db/db.config"; // Database connection utility
+// Importing necessary tools
+import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { WebhookEvent } from "@clerk/nextjs/server";
+import User from "@/model/User.model";
+import dbConnect from "@/config/db/db.config";
 
-// Define a type for the webhook event data to ensure type safety
+// Define a type for the webhook event data
 interface WebhookEventData {
-  id: string; // User ID
-  name: string; // User's full name
-  email: string; // User's email address
-  image_url?: string; // Optional user profile image URL
+  id: string;
+  name: string;
+  email: string;
+  image_url?: string;
 }
 
-// API endpoint to handle POST requests from webhooks
+// API endpoint to handle POST requests
 export async function POST(req: Request) {
-  // Log when the webhook is received with timestamp
   console.log("Webhook received at:", new Date().toISOString());
 
-  // Get the signing secret from environment variables
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
-  // Check if signing secret is available
   if (!SIGNING_SECRET) {
     console.error("Missing SIGNING_SECRET");
     return new Response(
@@ -29,15 +26,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // Initialize Svix webhook verifier
   const wh = new Webhook(SIGNING_SECRET);
-  // Get Svix headers for verification
   const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
 
-  // Validate presence of required Svix headers
   if (!svix_id || !svix_timestamp || !svix_signature) {
     console.error("Missing Svix headers");
     return new Response(JSON.stringify({ error: "Missing Svix headers" }), {
@@ -46,12 +40,10 @@ export async function POST(req: Request) {
     });
   }
 
-  // Parse the request body
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
   let evt: WebhookEvent;
-  // Verify the webhook signature
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -60,7 +52,6 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
     console.log("Webhook verified:", evt.type);
   } catch (err) {
-    // Handle verification failure
     console.error("Webhook verification failed:", err);
     return new Response(
       JSON.stringify({ error: "Webhook verification failed" }),
@@ -68,7 +59,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Extract event type and user data
   const eventType = evt.type;
   const userData = evt.data as {
     id: string;
@@ -78,7 +68,6 @@ export async function POST(req: Request) {
     image_url?: string;
   };
 
-  // Validate user ID presence
   if (!userData.id) {
     console.error("No user ID provided in webhook data");
     return new Response(
@@ -87,17 +76,15 @@ export async function POST(req: Request) {
     );
   }
 
-  // Structure the event data for processing
   const eventData: WebhookEventData = {
     id: userData.id,
     name:
       `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
-      "Unnamed User", // Combine first and last name, fallback to "Unnamed User"
-    email: userData.email_addresses[0]?.email_address ?? "", // Get first email or empty string
+      "Unnamed User",
+    email: userData.email_addresses[0]?.email_address ?? "",
     image_url: userData.image_url,
   };
 
-  // Validate email presence for create/update events
   if (
     (eventType === "user.created" || eventType === "user.updated") &&
     !eventData.email
@@ -109,7 +96,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Establish database connection
+  // Connect to the database
   try {
     await dbConnect();
   } catch (err) {
@@ -120,11 +107,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Handle different webhook event types
   try {
     switch (eventType) {
       case "user.created":
-        // Create new user in database
         await User.create({
           _id: eventData.id,
           name: eventData.name,
@@ -135,7 +120,6 @@ export async function POST(req: Request) {
         break;
 
       case "user.updated":
-        // Update existing user in database
         await User.findOneAndUpdate(
           { _id: eventData.id },
           {
@@ -143,14 +127,12 @@ export async function POST(req: Request) {
             email: eventData.email,
             image_url: eventData.image_url,
           },
-          { new: true } // Return the updated document
+          { new: true }
         );
         console.log("User updated:", eventData);
         break;
 
-
       default:
-        // Log unhandled event types
         console.warn("Unhandled event type:", eventType);
         return new Response(
           JSON.stringify({ message: `Unhandled event type: ${eventType}` }),
@@ -158,7 +140,6 @@ export async function POST(req: Request) {
         );
     }
   } catch (err) {
-    // Handle database operation errors
     console.error(`Database operation failed for ${eventType}:`, err);
     return new Response(
       JSON.stringify({ error: "Database operation failed" }),
@@ -166,9 +147,9 @@ export async function POST(req: Request) {
     );
   }
 
-  // Return success response
   return new Response(
     JSON.stringify({ message: `Webhook processed: ${eventType}` }),
     { status: 200, headers: { "Content-Type": "application/json" } }
   );
 }
+
