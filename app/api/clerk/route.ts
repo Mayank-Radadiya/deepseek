@@ -1,9 +1,9 @@
 // Importing necessary tools
-import { Webhook } from "svix"; // Tool to verify webhook signatures
-import { headers } from "next/headers"; // Get HTTP headers in Next.js
-import { WebhookEvent } from "@clerk/nextjs/server"; // Type definition for Clerk webhook events
-import User from "@/model/User.model"; // Our User database model
-import dbConnect from "@/config/db/db.config"; // Database connection function
+import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { WebhookEvent } from "@clerk/nextjs/server";
+import User from "@/model/User.model";
+import dbConnect from "@/config/db/db.config";
 
 // Define a type for the webhook event data
 interface WebhookEventData {
@@ -17,36 +17,33 @@ interface WebhookEventData {
 export async function POST(req: Request) {
   console.log("Webhook received at:", new Date().toISOString());
 
-  // Get the secret key from environment variables for verification
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
-
   if (!SIGNING_SECRET) {
     console.error("Missing SIGNING_SECRET");
-    throw new Error("Error: Please add SIGNING_SECRET from Clerk to .env");
+    return new Response(
+      JSON.stringify({ error: "Server configuration error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 
-  // Create a new Webhook verifier with our secret
   const wh = new Webhook(SIGNING_SECRET);
-
-  // Get all headers from the incoming request
   const headerPayload = await headers();
-  const svix_id = headerPayload.get("svix-id"); // Unique webhook ID
-  const svix_timestamp = headerPayload.get("svix-timestamp"); // Timestamp
-  const svix_signature = headerPayload.get("svix-signature"); // Signature
+  const svix_id = headerPayload.get("svix-id");
+  const svix_timestamp = headerPayload.get("svix-timestamp");
+  const svix_signature = headerPayload.get("svix-signature");
 
-  // Check for required Svix headers
   if (!svix_id || !svix_timestamp || !svix_signature) {
     console.error("Missing Svix headers");
-    return new Response("Error: Missing Svix headers", { status: 400 });
+    return new Response(JSON.stringify({ error: "Missing Svix headers" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
-  // Get and stringify the request body
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
   let evt: WebhookEvent;
-
-  // Verify the webhook signature
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -55,11 +52,13 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
     console.log("Webhook verified:", evt.type);
   } catch (err) {
-    console.error("Error: Could not verify webhook:", err);
-    return new Response("Error: Verification error", { status: 400 });
+    console.error("Webhook verification failed:", err);
+    return new Response(
+      JSON.stringify({ error: "Webhook verification failed" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
   }
 
-  // Extract event type and data
   const eventType = evt.type;
   const userData = evt.data as {
     id: string;
@@ -69,7 +68,14 @@ export async function POST(req: Request) {
     image_url?: string;
   };
 
-  // Prepare data for processing with explicit typing
+  if (!userData.id) {
+    console.error("No user ID provided in webhook data");
+    return new Response(
+      JSON.stringify({ error: "Invalid webhook data: missing user ID" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const eventData: WebhookEventData = {
     id: userData.id,
     name:
@@ -79,51 +85,79 @@ export async function POST(req: Request) {
     image_url: userData.image_url,
   };
 
-  // Validate email for create/update events
   if (
     (eventType === "user.created" || eventType === "user.updated") &&
     !eventData.email
   ) {
     console.error("No email address provided in webhook data");
-    return new Response("Error: No email provided", { status: 400 });
-  }
-
-  // add mongodb connection
-  await dbConnect();
-
-  // add user to database
-  if (eventType === "user.created") {
-    await User.create({
-      _id: eventData.id,
-      name: eventData.name,
-      email: eventData.email,
-      image_url: eventData.image_url,
-    });
-  }
-
-  // update user in database
-  if (eventType === "user.updated") {
-    await User.findOneAndUpdate(
-      { _id: eventData.id },
-      {
-        name: eventData.name,
-        email: eventData.email,
-        image_url: eventData.image_url,
-      },
-      { new: true }
+    return new Response(
+      JSON.stringify({ error: "Invalid webhook data: missing email" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
-  // delete user from database
-  if (eventType === "user.deleted") {
-    await User.findOneAndDelete({ _id: eventData.id })
-      .then(() => {
-        console.log("User deleted from database");
-      })
-      .catch((err) => {
-        console.error("Error deleting user from database:", err);
-      });
+
+  // Connect to the database
+  try {
+    await dbConnect();
+  } catch (err) {
+    console.error("Database connection failed:", err);
+    return new Response(
+      JSON.stringify({ error: "Database connection failed" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 
-  console.log(`Returning response for ${eventType}`);
-  return new Response(`Webhook received: ${eventType}`, { status: 200 });
+  try {
+    switch (eventType) {
+      case "user.created":
+        await User.create({
+          _id: eventData.id,
+          name: eventData.name,
+          email: eventData.email,
+          image_url: eventData.image_url,
+        });
+        console.log("User created:", eventData);
+        break;
+
+      case "user.updated":
+        await User.findOneAndUpdate(
+          { _id: eventData.id },
+          {
+            name: eventData.name,
+            email: eventData.email,
+            image_url: eventData.image_url,
+          },
+          { new: true }
+        );
+        console.log("User updated:", eventData);
+        break;
+
+      case "user.deleted":
+        const deletedUser = await User.findOneAndDelete({ _id: eventData.id });
+        if (deletedUser) {
+          console.log("User deleted:", eventData.id);
+        } else {
+          console.log("User not found for deletion:", eventData.id);
+        }
+        break;
+
+      default:
+        console.warn("Unhandled event type:", eventType);
+        return new Response(
+          JSON.stringify({ message: `Unhandled event type: ${eventType}` }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+    }
+  } catch (err) {
+    console.error(`Database operation failed for ${eventType}:`, err);
+    return new Response(
+      JSON.stringify({ error: "Database operation failed" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  return new Response(
+    JSON.stringify({ message: `Webhook processed: ${eventType}` }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
