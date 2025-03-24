@@ -13,50 +13,6 @@ interface WebhookEventData {
   image_url?: string;
 }
 
-// Background processing function with typed data
-async function processEventAsync(eventType: string, data: WebhookEventData) {
-  console.log(`Starting async processing for event: ${eventType}, data:`, data);
-
-  try {
-    // Ensure database connection is established
-    await dbConnect();
-    console.log("Database connection established successfully");
-
-    switch (eventType) {
-      case "user.created": {
-        const newUser = await User.create({
-          _id: data.id,
-          name: data.name,
-          email: data.email,
-          image: data.image_url,
-        });
-        console.log("User created successfully:", newUser);
-        break;
-      }
-      case "user.updated": {
-        const updateResult = await User.updateOne(
-          { _id: data.id },
-          {
-            $set: { name: data.name, email: data.email, image: data.image_url },
-          }
-        );
-        console.log("User update result:", updateResult);
-        break;
-      }
-      case "user.deleted": {
-        const deleteResult = await User.deleteOne({ _id: data.id });
-        console.log("User delete result:", deleteResult);
-        break;
-      }
-      default:
-        console.log(`Unhandled event type in async: ${eventType}`);
-    }
-  } catch (error) {
-    console.error(`Error in async processing for ${eventType}:`, error);
-    throw error; // Re-throw to ensure the .catch in POST handler catches it
-  }
-}
-
 // API endpoint to handle POST requests
 export async function POST(req: Request) {
   console.log("Webhook received at:", new Date().toISOString());
@@ -132,14 +88,41 @@ export async function POST(req: Request) {
     return new Response("Error: No email provided", { status: 400 });
   }
 
-  // Start background processing and return response immediately
-  processEventAsync(eventType, eventData)
-    .then(() =>
-      console.log(`Async processing started successfully for ${eventType}`)
-    )
-    .catch((err) => {
-      console.error(`Failed to process ${eventType} in background:`, err);
+  // add mongodb connection
+  await dbConnect();
+
+  // add user to database
+  if (eventType === "user.created") {
+    await User.create({
+      _id: eventData.id,
+      name: eventData.name,
+      email: eventData.email,
+      image_url: eventData.image_url,
     });
+  }
+
+  // update user in database
+  if (eventType === "user.updated") {
+    await User.findOneAndUpdate(
+      { _id: eventData.id },
+      {
+        name: eventData.name,
+        email: eventData.email,
+        image_url: eventData.image_url,
+      },
+      { new: true }
+    );
+  }
+  // delete user from database
+  if (eventType === "user.deleted") {
+    await User.findOneAndDelete({ _id: eventData.id })
+      .then(() => {
+        console.log("User deleted from database");
+      })
+      .catch((err) => {
+        console.error("Error deleting user from database:", err);
+      });
+  }
 
   console.log(`Returning response for ${eventType}`);
   return new Response(`Webhook received: ${eventType}`, { status: 200 });
