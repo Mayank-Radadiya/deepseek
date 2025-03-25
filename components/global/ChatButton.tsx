@@ -6,18 +6,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import axios from "axios";
 
 interface ChatButtonProps {
   open: boolean;
 }
 
 const ChatButton = ({ open }: ChatButtonProps) => {
+  // Function to handle chat button click
+  const handleChatButtonClick = async () => {
+    // Logic to handle chat button click
+    const chat = await axios.post("/api/chat/create");
+    try {
+      console.log("Chat created:", chat.data);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+    }
+  };
+  
   return (
     <>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              onClick={handleChatButtonClick}
               className={` flex items-center justify-center cursor-pointer ${
                 open
                   ? "bg-primary hover:opacity-80 rounded-2xl gap-2 p-2.5 w-max"
