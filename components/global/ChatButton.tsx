@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import { assets } from "@/public/assets";
 import {
@@ -7,23 +8,24 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ChatButtonProps {
   open: boolean;
 }
 
 const ChatButton = ({ open }: ChatButtonProps) => {
-  // Function to handle chat button click
   const handleChatButtonClick = async () => {
-    // Logic to handle chat button click
-    const chat = await axios.post("/api/chat/create");
     try {
-      console.log("Chat created:", chat.data);
+      const chat = await axios.post("/api/chat/create");
+      // Assuming you have a toast library like react-hot-toast
+      toast.success("Chat created successfully!");
     } catch (error) {
-      console.error("Error creating chat:", error);
+      toast.error("Failed to create chat. Please try again.");
     }
   };
-  
+
   return (
     <>
       <TooltipProvider>

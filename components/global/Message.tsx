@@ -45,6 +45,8 @@ const Message = ({ role, content }: MessageProps) => {
                         <Image
                           src={assets.copy_icon}
                           alt="copy"
+                          width={20}
+                          height={20}
                           className="w-4 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -55,6 +57,8 @@ const Message = ({ role, content }: MessageProps) => {
                         <Image
                           src={assets.pencil_icon}
                           alt="edit"
+                          width={20}
+                          height={20}
                           className="w-4.5 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -68,6 +72,8 @@ const Message = ({ role, content }: MessageProps) => {
                         <Image
                           src={assets.copy_icon}
                           alt="copy"
+                          width={20}
+                          height={20}
                           className="w-4 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -79,6 +85,8 @@ const Message = ({ role, content }: MessageProps) => {
                           src={assets.regenerate_icon}
                           alt="regenerate"
                           className="w-4 cursor-pointer"
+                          width={20}
+                          height={20}
                         />
                       </TooltipTrigger>
                       <TooltipContent>Regenerate</TooltipContent>
@@ -88,6 +96,8 @@ const Message = ({ role, content }: MessageProps) => {
                         <Image
                           src={assets.like_icon}
                           alt="like"
+                          width={20}
+                          height={20}
                           className="w-4 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -98,6 +108,8 @@ const Message = ({ role, content }: MessageProps) => {
                         <Image
                           src={assets.dislike_icon}
                           alt="dislike"
+                          width={20}
+                          height={20}
                           className="w-4 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -115,6 +127,8 @@ const Message = ({ role, content }: MessageProps) => {
                 <Image
                   src={assets.logo_icon}
                   alt="logo"
+                  width={36}
+                  height={36}
                   className="w-9 h-9 p-1 border border-white/15 rounded-full"
                 />
                 <div className="space-y-4 w-full overflow-auto break-words">

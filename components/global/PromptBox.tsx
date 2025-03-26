@@ -4,7 +4,6 @@ import { assets } from "@/public/assets";
 import Image from "next/image";
 import { useState } from "react";
 
-
 const PromptBox = () => {
   const [prompt, setPrompt] = useState<string>("");
   return (
@@ -35,6 +34,7 @@ const PromptBox = () => {
                 alt="icon"
                 width={15}
                 height={15}
+                className="h-auto w-auto"
               />{" "}
               Search
             </p>
@@ -45,7 +45,7 @@ const PromptBox = () => {
               alt="pin_icon"
               height={15}
               width={15}
-              className="cursor-pointer"
+              className="cursor-pointer h-auto w-auto"
             />
             <button
               type="submit"
@@ -61,6 +61,7 @@ const PromptBox = () => {
                 alt="upload_icon"
                 height={15}
                 width={15}
+                className="h-auto w-auto"
               />
             </button>
           </div>

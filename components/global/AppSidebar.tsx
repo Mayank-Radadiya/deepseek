@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useClerk, UserButton, useUser } from "@clerk/nextjs";
 import ChatButton from "./ChatButton";
 import ChatLabel from "./ChatLabel";
+import ChatHistory from "./ChatHistory";
 
 export function AppSidebar() {
   const { openSignIn } = useClerk();
@@ -42,7 +43,13 @@ export function AppSidebar() {
           </div>
         ) : (
           <div className="flex items-center justify-between w-full h-full px-4">
-            <Image src={assets.logo_text} height={150} width={150} alt="Logo" />
+            <Image
+              src={assets.logo_text}
+              height={150}
+              width={200}
+              alt="Logo"
+              className="h-auto w-auto"
+            />
             <SidebarTrigger className="hover:bg-transparent cursor-pointer" />
           </div>
         )}
@@ -63,7 +70,7 @@ export function AppSidebar() {
               </p>
               <div className="h-[500px] w-full overflow-scroll flex flex-col gap-2 px-3">
                 {/* //! history of user chat.... */}
-                <ChatLabel />
+                {user && <ChatHistory userId={user?.id!} />}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -99,11 +106,11 @@ export function AppSidebar() {
                     Get App
                   </p>
                   <Image
-                    className={`${open ? "" : "hidden"}`}
+                    className={`w-auto h-auto ${open ? "" : "hidden"}`}
                     src={assets.new_icon}
                     alt="New Icon"
                     height={28}
-                    width={28}
+                    width={30}
                   />
                 </div>
               </TooltipTrigger>
@@ -115,7 +122,7 @@ export function AppSidebar() {
                     width={160}
                     alt="QR Code"
                     className={cn(
-                      "object-contain rounded-md ",
+                      "object-contain rounded-md  w-auto h-auto",
                       open
                         ? "border border-blue-300 transform hover:scale-105 transition-transform duration-300"
                         : "opacity-90"
@@ -141,7 +148,7 @@ export function AppSidebar() {
                 alt="Profile Icon"
                 height={25}
                 width={25}
-                className="transform hover:scale-110 transition-transform duration-300"
+                className="transform hover:scale-110 w-auto h-auto transition-transform duration-300"
               />
             )}
             {open && <p className="text-sm font-semibold">My Profile</p>}

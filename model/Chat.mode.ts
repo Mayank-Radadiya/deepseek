@@ -1,4 +1,3 @@
-import { time, timeStamp } from "console";
 import mongoose from "mongoose";
 
 const ChatSchema = new mongoose.Schema(
@@ -11,7 +10,7 @@ const ChatSchema = new mongoose.Schema(
       {
         role: { type: String, required: true },
         content: { type: String, required: true },
-        timeStamp: { type: Number, default: Date.now() },
+        timeStamp: { type: Number, default: () => Date.now() },
       },
     ],
     userId: {

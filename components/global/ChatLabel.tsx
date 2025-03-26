@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { assets } from "@/public/assets";
 import Image from "next/image";
@@ -17,10 +17,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import axios from "axios";
+import { toast } from "sonner";
 
-const ChatLabel = () => {
+interface chatLabelProps {
+  chatTitle: string;
+  id: string;
+}
+
+const ChatLabel = ({ chatTitle, id }: chatLabelProps) => {
   const [open, setOpen] = useState(false);
   const [actionType, setActionType] = useState<"edit" | "delete" | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const deleteChat = async () => {
+    try {
+      await axios.delete("/api/chat/delete", {
+        data: {
+          id,
+        },
+      });
+      toast.success("Chat deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete chat");
+    }
+  };
+
+  const renameChat = async () => {
+    try {
+      await axios.post("/api/chat/rename", {
+        id,
+        newName: inputRef.current?.value || "",
+      });
+      toast.success("Chat edited successfully");
+    } catch (error) {
+      toast.error("Failed to rename chat");
+    }
+  };
 
   return (
     <>
@@ -31,11 +64,13 @@ const ChatLabel = () => {
             className="flex items-center justify-start w-full text-white/80 hover:bg-white/10 hover:text-white/100 rounded-[5px] text-sm font-medium py-2 px-4 transition-all duration-300 gap-2 group"
           >
             <div className="flex items-center justify-between w-full">
-              <span>chat</span>
+              <span> {chatTitle} </span>
               <DropdownMenuTrigger className="border-none outline-none">
                 <Image
                   src={assets.three_dots}
                   alt="dot"
+                  width={20}
+                  height={20}
                   className="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 />
               </DropdownMenuTrigger>
@@ -100,6 +135,7 @@ const ChatLabel = () => {
                     type="text"
                     className="w-full mt-2 p-2 border rounded-md text-white/80"
                     placeholder="Learning react..."
+                    ref={inputRef}
                   />
                 </>
               ) : (
@@ -119,9 +155,14 @@ const ChatLabel = () => {
               Cancel
             </Button>
             <Button
+              type="submit"
               className="text-gray-300 hover:bg-red-400 transition-all duration-300 rounded-[3px] cursor-pointer"
               onClick={() => {
-                // Handle action
+                if (actionType === "edit") {
+                  renameChat();
+                } else if (actionType === "delete") {
+                  deleteChat();
+                }
                 setOpen(false);
               }}
             >

@@ -9,8 +9,7 @@ import { useState } from "react";
 
 export default function Home() {
   const [message, setMessage] = useState<string>("");
-  console.log(setMessage);
-
+  
   return (
     <>
       <div className="flex max-h-screen p-4">
@@ -40,7 +39,7 @@ export default function Home() {
             </>
           ) : (
             <>
-              <Message role="user" content="hello " />
+              <Message role="system" content="hello " />
             </>
           )}
 
