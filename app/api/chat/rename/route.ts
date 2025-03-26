@@ -13,13 +13,13 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
-    await Chat.updateOne(
+    await Chat.findByIdAndUpdate(
       {
-        userId: user.userId,
         _id: id,
+        userId: user.userId,
       },
       {
-        $set: { name: newName },
+        name: newName,
       }
     );
 
