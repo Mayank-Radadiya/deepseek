@@ -19,16 +19,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useClerk, UserButton, useUser } from "@clerk/nextjs";
+import { useClerk, UserButton } from "@clerk/nextjs";
 import ChatButton from "./ChatButton";
 import ChatLabel from "./ChatLabel";
 import ChatHistory from "./ChatHistory";
+import { useAppContext } from "@/context/AppContext";
 
 export function AppSidebar() {
   const { openSignIn } = useClerk();
   const { open } = useSidebar();
-  const { user } = useUser(); // Get the current user client-side
-
+  const user = useAppContext(); 
   return (
     <Sidebar
       collapsible="icon"
@@ -70,7 +70,7 @@ export function AppSidebar() {
               </p>
               <div className="h-[500px] w-full overflow-scroll flex flex-col gap-2 px-3">
                 {/* //! history of user chat.... */}
-                {user && <ChatHistory userId={user?.id!} />}
+                {user && <ChatHistory />}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>

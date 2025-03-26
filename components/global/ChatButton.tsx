@@ -7,24 +7,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 interface ChatButtonProps {
   open: boolean;
 }
 
 const ChatButton = ({ open }: ChatButtonProps) => {
-  const handleChatButtonClick = async () => {
-    try {
-      const chat = await axios.post("/api/chat/create");
-      // Assuming you have a toast library like react-hot-toast
-      toast.success("Chat created successfully!");
-    } catch (error) {
-      toast.error("Failed to create chat. Please try again.");
-    }
-  };
+  
 
   return (
     <>
@@ -32,7 +21,7 @@ const ChatButton = ({ open }: ChatButtonProps) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={handleChatButtonClick}
+              // onClick={handleChatButtonClick}
               className={` flex items-center justify-center cursor-pointer ${
                 open
                   ? "bg-primary hover:opacity-80 rounded-2xl gap-2 p-2.5 w-max"

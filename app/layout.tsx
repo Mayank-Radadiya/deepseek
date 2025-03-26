@@ -18,19 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <ClerkProvider
-        appearance={{
-          baseTheme: dark,
-        }}
-      >
-        <AppProvider>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+      }}
+    >
+      <AppProvider>
+        <html lang="en">
           <body className={`antialiased max-h-screen`}>
             {children}
             <Toaster />
           </body>
-        </AppProvider>
-      </ClerkProvider>
-    </html>
+        </html>
+      </AppProvider>
+    </ClerkProvider>
   );
 }

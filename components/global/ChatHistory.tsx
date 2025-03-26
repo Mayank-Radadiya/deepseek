@@ -3,10 +3,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import ChatLabel from "./ChatLabel";
-
-interface ChatHistoryProps {
-  userId: string;
-}
+import { useUser } from "@clerk/nextjs";
 
 interface chatProps {
   _id: string;
@@ -14,20 +11,8 @@ interface chatProps {
   userId: string;
 }
 
-const ChatHistory = ({ userId }: ChatHistoryProps) => {
+const ChatHistory = () => {
   const [response, setResponse] = useState([]);
-  useEffect(() => {
-    const fetchChatHistory = async () => {
-      try {
-        const response = await axios.get("/api/chat/getchat");
-
-        setResponse(response.data);
-      } catch (error) {
-        console.error("Error fetching chat history:", error);
-      }
-    };
-    fetchChatHistory();
-  }, [userId]);
 
   return (
     <>

@@ -1,11 +1,88 @@
 "use client";
+import { useAppContext } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
 import { assets } from "@/public/assets";
+import axios from "axios";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
+
+interface Chat {
+  _id: string;
+  messages: {
+    // Changed from 'message' to 'messages' to match your setChat usage
+    role: string;
+    content: string;
+    timeStamp: number;
+  }[];
+  userId: string;
+  name: string;
+}
 
 const PromptBox = () => {
   const [prompt, setPrompt] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const { user, chat, setChat, selectedChat, setSelectedChat } =
+    useAppContext();
+
+  const sentPrompt = async (e: React.FormEvent<HTMLFormElement>) => {
+    setLoading(true);
+    try {
+      e.preventDefault();
+      if (!user) return toast.error("Please login to continue");
+
+      setPrompt("");
+
+      const userPrompt = {
+        role: "user",
+        content: prompt,
+        timeStamp: Date.now(),
+      };
+
+      setChat((prev) =>
+        prev.map((chat: Chat) =>
+          chat._id === selectedChat?._id
+            ? { ...chat, messages: [...chat.messages, userPrompt] }
+            : chat
+        )
+      );
+
+      setSelectedChat((prev) => ({
+        ...prev,
+        messages: [...prev?.messages, userPrompt],
+      }));
+
+      const data = await axios.post("/api/chat/ai", {
+        chatId: selectedChat._id,
+        prompt,
+      });
+
+      if (data.status === 200) {
+        setChat((prev) =>
+          prev.map((chat: Chat) =>
+            chat._id === selectedChat?._id
+              ? { ...chat, messages: [...chat.messages, data.data] }
+              : chat
+          )
+        );
+
+        const message = data.data.content;
+
+        const messageToken = message.split(" ");
+        let 
+      } else {
+        toast.error("Something went wrong");
+        setPrompt("");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <form className="w-full max-w-2xl bg-[#404045] p-4 rounded-3xl shadow-md mt-4 transition-all duration-300">
@@ -56,13 +133,17 @@ const PromptBox = () => {
                   : "bg-gray-500/30 cursor-not-allowed"
               )}
             >
-              <Image
-                src={assets.arrow_icon}
-                alt="upload_icon"
-                height={15}
-                width={15}
-                className="h-auto w-auto"
-              />
+              {loading ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Image
+                  src={assets.arrow_icon}
+                  alt="upload_icon"
+                  height={15}
+                  width={15}
+                  className="h-auto w-auto"
+                />
+              )}
             </button>
           </div>
         </div>
