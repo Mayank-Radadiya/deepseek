@@ -1,6 +1,8 @@
-export const maxDuration = 60
+export const maxDuration = 60;
+
 import dbConnect from "@/config/db/db.config";
 import Chat from "@/model/Chat.mode";
+
 import { getAuth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
@@ -16,32 +18,55 @@ const openai = new OpenAI({
   apiKey: deepSeekApi,
 });
 
+interface Message {
+  role: string;
+  content: string;
+  timeStamp?: number;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
-    const { id, prompt } = await req.json();
 
     if (!userId) {
-      return new Response("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { chatId, prompt } = await req.json();
+
+    if (!chatId || !prompt) {
+      return NextResponse.json(
+        { error: "Missing chatId or prompt" },
+        { status: 400 }
+      );
     }
 
     await dbConnect();
-    const data = await Chat.findOne({
+
+    const chat = await Chat.findOne({
+      _id: chatId,
       userId,
-      id,
     });
 
-    if (!data) {
-      return new Response("Chat not found", { status: 404 });
+    if (!chat) {
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    const userPrompt = {
+    // Ensure messages array exists
+    if (!Array.isArray(chat.messages)) {
+      chat.messages = [];
+    }
+
+    const userPrompt: Message = {
       role: "user",
       content: prompt,
+      timeStamp: Date.now(),
     };
 
-    data.messages.push(userPrompt);
+    // Add user message to chat
+    chat.messages.push(userPrompt);
 
+    // Get AI response
     const response = await openai.chat.completions.create({
       model: "deepseek/deepseek-chat-v3-0324:free",
       store: true,
@@ -53,13 +78,33 @@ export async function POST(req: NextRequest) {
       ],
     });
 
-    const messages = response.choices[0].message;
-    data.messages.push(messages);
-    await data.save();
+    const assistantMessage: Message = {
+      role: "assistant",
+      content: response.choices[0].message.content || "No response content",
+      timeStamp: Date.now(),
+    };
 
-    return NextResponse.json(messages);
+    // Add AI response to chat
+    chat.messages.push(assistantMessage);
+    await chat.save();
+
+    return NextResponse.json({
+      status: 200,
+      data: assistantMessage,
+    });
   } catch (error) {
     console.error("Error in POST /api/chat/ai:", error);
-    return new Response("Internal Server Error", { status: 500 });
+
+    if (error instanceof OpenAI.APIError) {
+      return NextResponse.json(
+        { error: "AI service error", details: error.message },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

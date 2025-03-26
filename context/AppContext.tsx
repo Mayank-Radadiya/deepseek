@@ -1,48 +1,55 @@
+// AppContext.tsx
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { User } from "@clerk/nextjs/server";
 
-// Define props interface for AppProvider
-interface AppContextProps {
-  children?: React.ReactNode;
+// Define the Message interface
+interface Message {
+  role: string;
+  content: string;
+  timeStamp: number;
 }
 
 // Define the Chat interface
 interface Chat {
-  updatedAt: string;
+  _id: string;
+  messages: Message[];
+  userId: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-// Define the type for the context value
+interface AppContextProps {
+  children?: React.ReactNode;
+}
+
 interface AppContextValue {
-  user: ReturnType<typeof useUser>["user"]; // Type from Clerk's useUser
-  chat: Chat[]; // Array of Chat objects
-  setChat: React.Dispatch<React.SetStateAction<Chat[]>>; // Setter for chat
-  selectedChat: Chat | null; // Currently selected chat
-  setSelectedChat: React.Dispatch<React.SetStateAction<Chat | null>>; // Setter for selectedChat
-  createNewChat: () => Promise<void | null>; // Function to create a new chat
-  fetchUserChats: () => Promise<void | null>; // Function to fetch chats
+  user: ReturnType<typeof useUser>["user"];
+  chat: Chat[];
+  setChat: React.Dispatch<React.SetStateAction<Chat[]>>;
+  selectedChat: Chat | null;
+  setSelectedChat: React.Dispatch<React.SetStateAction<Chat | null>>;
+  createNewChat: () => Promise<void | null>;
+  fetchUserChats: () => Promise<void | null>;
 }
 
-// Create the context with an initial empty object, typed properly
 const AppContext = createContext<AppContextValue>({} as AppContextValue);
 
-// Custom hook to access the AppContext with proper typing
 export const useAppContext = () => {
   return useContext(AppContext);
 };
 
-// AppProvider component to wrap the app and provide context
 export const AppProvider = ({ children }: AppContextProps) => {
   const { user } = useUser();
   const { getToken } = useAuth();
 
-  const [chat, setChat] = useState<Chat[]>([]); // State for chat list
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null); // State for selected chat
-  const [isCreatingChat, setIsCreatingChat] = useState(false); // Flag to prevent concurrent creation
+  const [chat, setChat] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   const createNewChat = async () => {
     if (!user || isCreatingChat) return null;
@@ -57,16 +64,15 @@ export const AppProvider = ({ children }: AppContextProps) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Chat created successfully!");
-      await fetchUserChats(); // Refresh chat list
+      await fetchUserChats();
     } catch (error) {
       toast.error("Failed to create chat.");
       console.error("Error creating chat:", error);
     } finally {
-      setIsCreatingChat(false); // Reset flag
+      setIsCreatingChat(false);
     }
   };
 
-  // Function to fetch user's chats
   const fetchUserChats = async () => {
     if (!user) return null;
 
@@ -76,20 +82,19 @@ export const AppProvider = ({ children }: AppContextProps) => {
       const res = await axios.get("/api/chat/getchat", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("Fetched chats:", res.data);
-      const fetchedChats = res.data;
+      const fetchedChats: Chat[] = res.data;
 
       setChat(fetchedChats);
 
       if (fetchedChats.length === 0 && !isCreatingChat) {
-        await createNewChat(); // Create a chat if none exist
+        await createNewChat();
       } else {
         const sortedChats = [...fetchedChats].sort(
           (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime()
         );
-        setChat(sortedChats); // Update with sorted chats
-        setSelectedChat(sortedChats[0] || null); // Set most recent chat
+        setChat(sortedChats);
+        setSelectedChat(sortedChats[0] || null);
       }
       toast.success("Chats fetched successfully!");
     } catch (error) {
@@ -98,14 +103,12 @@ export const AppProvider = ({ children }: AppContextProps) => {
     }
   };
 
-  // Effect to fetch chats when user ID changes
   useEffect(() => {
     if (user?.id) {
       fetchUserChats();
     }
   }, [user?.id]);
 
-  // Context value with all properties and functions
   const value: AppContextValue = {
     user,
     chat,

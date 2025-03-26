@@ -28,7 +28,8 @@ import { useAppContext } from "@/context/AppContext";
 export function AppSidebar() {
   const { openSignIn } = useClerk();
   const { open } = useSidebar();
-  const user = useAppContext(); 
+  const { user } = useAppContext();
+
   return (
     <Sidebar
       collapsible="icon"
