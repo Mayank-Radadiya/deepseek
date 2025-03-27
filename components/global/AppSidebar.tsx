@@ -21,7 +21,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useClerk, UserButton } from "@clerk/nextjs";
 import ChatButton from "./ChatButton";
-import ChatLabel from "./ChatLabel";
 import ChatHistory from "./ChatHistory";
 import { useAppContext } from "@/context/AppContext";
 

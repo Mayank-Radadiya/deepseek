@@ -1,4 +1,3 @@
-// AppContext.tsx
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
@@ -6,14 +5,12 @@ import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// Define the Message interface
 interface Message {
   role: string;
   content: string;
   timeStamp: number;
 }
 
-// Define the Chat interface
 interface Chat {
   _id: string;
   messages: Message[];
@@ -35,6 +32,7 @@ interface AppContextValue {
   setSelectedChat: React.Dispatch<React.SetStateAction<Chat | null>>;
   createNewChat: () => Promise<void | null>;
   fetchUserChats: () => Promise<void | null>;
+  isLoadingChats: boolean;
 }
 
 const AppContext = createContext<AppContextValue>({} as AppContextValue);
@@ -50,6 +48,13 @@ export const AppProvider = ({ children }: AppContextProps) => {
   const [chat, setChat] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(false);
+
+  useEffect(() => {
+    if (selectedChat) {
+      localStorage.setItem("selectedChatId", selectedChat._id);
+    }
+  }, [selectedChat]);
 
   const createNewChat = async () => {
     if (!user || isCreatingChat) return null;
@@ -76,30 +81,46 @@ export const AppProvider = ({ children }: AppContextProps) => {
   const fetchUserChats = async () => {
     if (!user) return null;
 
+    setIsLoadingChats(true);
     const token = await getToken();
 
     try {
-      const res = await axios.get("/api/chat/getchat", {
+      const { data } = await axios.get("/api/chat/getchat", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const fetchedChats: Chat[] = res.data;
 
-      setChat(fetchedChats);
+      // Ensure data is an array and format it
+      const fetchedChats: Chat[] = Array.isArray(data) ? data : [];
 
-      if (fetchedChats.length === 0 && !isCreatingChat) {
+      // Sort chats by updatedAt in descending order
+      const sortedChats = [...fetchedChats].sort(
+        (a, b) =>
+          new Date(b.updatedAt ?? 0).getTime() -
+          new Date(a.updatedAt ?? 0).getTime()
+      );
+
+      setChat(sortedChats);
+      console.log("Fetched and sorted chats:", sortedChats);
+
+      // Restore selectedChat from localStorage or use most recent
+      const storedChatId = localStorage.getItem("selectedChatId");
+      const chatToSelect =
+        sortedChats.find((chat) => chat._id === storedChatId) ||
+        sortedChats[0] ||
+        null;
+
+      if (sortedChats.length === 0 && !isCreatingChat) {
         await createNewChat();
       } else {
-        const sortedChats = [...fetchedChats].sort(
-          (a, b) =>
-            new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime()
-        );
-        setChat(sortedChats);
-        setSelectedChat(sortedChats[0] || null);
+        setSelectedChat(chatToSelect);
       }
+
       toast.success("Chats fetched successfully!");
     } catch (error) {
       console.error("Error fetching chats:", error);
       toast.error("Failed to fetch chats.");
+    } finally {
+      setIsLoadingChats(false);
     }
   };
 
@@ -117,6 +138,7 @@ export const AppProvider = ({ children }: AppContextProps) => {
     setSelectedChat,
     createNewChat,
     fetchUserChats,
+    isLoadingChats,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -15,9 +15,6 @@ interface WebhookEventData {
 
 // API endpoint to handle POST requests from Clerk webhooks
 export async function POST(req: Request) {
-  // Log the timestamp when the webhook is received for debugging purposes
-  console.log("Webhook received at:", new Date().toISOString());
-
   // Retrieve the signing secret from environment variables for webhook verification
   const SIGNING_SECRET = process.env.SIGNING_SECRET;
   // Check if the signing secret is missing, which is required for verification
@@ -60,7 +57,6 @@ export async function POST(req: Request) {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent; // Cast the verified result to WebhookEvent type
-    console.log("Webhook verified:", evt.type); // Log successful verification with event type
   } catch (err) {
     console.error("Webhook verification failed:", err);
     return new Response(
@@ -100,8 +96,6 @@ export async function POST(req: Request) {
     image_url: userData.image_url, // Profile image URL, if provided
   };
 
-
-
   // Validate that an email is provided for create/update events
   if (
     (eventType === "user.created" || eventType === "user.updated") &&
@@ -132,18 +126,17 @@ export async function POST(req: Request) {
     switch (eventType) {
       case "user.created":
         // Create a new user in the database with the provided data
-        const newUser = await User.create({
+        await User.create({
           _id: eventData.id, // Use Clerk ID as the MongoDB _id
           name: eventData.name, // User’s full name
           email: eventData.email, // User’s email address
           image_url: eventData.image_url, // User’s profile image URL
         });
-        console.log("User created:", newUser); // Log the created user document
         break;
 
       case "user.updated":
         // Update an existing user in the database
-        const updatedUser = await User.findOneAndUpdate(
+        await User.findOneAndUpdate(
           { _id: eventData.id }, // Find user by Clerk ID
           {
             name: eventData.name, // Update name
@@ -152,17 +145,13 @@ export async function POST(req: Request) {
           },
           { new: true } // Return the updated document
         );
-        console.log("User updated:", updatedUser); // Log the updated user document
-        break;
 
-        // Handle any unrecognized event types
-        console.warn("Unhandled event type:", eventType); // Log a warning
-        // Return a 200 response indicating the event type isn’t supported
-        return new Response(
-          JSON.stringify({ message: `Unhandled event type: ${eventType}` }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
+        break;
     }
+    return new Response(
+      JSON.stringify({ message: `Unhandled event type: ${eventType}` }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (err) {
     // Catch and handle any errors during database operations
     console.error(`Database operation failed for ${eventType}:`, err); // Log the specific error

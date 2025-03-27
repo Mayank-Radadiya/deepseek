@@ -10,8 +10,6 @@ export async function GET(req: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  console.log("User ID:", user.userId);
-
   try {
     await dbConnect();
     const chat = await Chat.find({

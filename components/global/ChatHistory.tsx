@@ -1,9 +1,5 @@
-"use client";
-
-import axios from "axios";
-import { useEffect, useState } from "react";
 import ChatLabel from "./ChatLabel";
-import { useUser } from "@clerk/nextjs";
+import { useAppContext } from "@/context/AppContext";
 
 interface chatProps {
   _id: string;
@@ -12,13 +8,19 @@ interface chatProps {
 }
 
 const ChatHistory = () => {
-  const [response, setResponse] = useState([]);
+  const { chat, selectedChat } = useAppContext();
+
+  const selectedChatId = selectedChat?._id;
 
   return (
     <>
-      {response.map((chat: chatProps) => (
+      {chat.map((chat: chatProps) => (
         <div key={chat._id}>
-          <ChatLabel chatTitle={chat.name} id={chat._id} />
+          <ChatLabel
+            chatTitle={chat.name}
+            id={chat._id}
+            selectedChatId={selectedChatId}
+          />
         </div>
       ))}
     </>

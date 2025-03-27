@@ -43,18 +43,15 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
-    const chat = await Chat.findOne({
-      _id: chatId,
-      userId,
-    });
+    const chat = await Chat.findOne({ _id: chatId, userId });
 
     if (!chat) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    // Ensure messages array exists
-    if (!Array.isArray(chat.messages)) {
-      chat.messages = [];
+    // Ensure message array exists
+    if (!Array.isArray(chat.message)) {
+      chat.message = [];
     }
 
     const userPrompt: Message = {
@@ -63,19 +60,13 @@ export async function POST(req: NextRequest) {
       timeStamp: Date.now(),
     };
 
-    // Add user message to chat
+    // Use chat.message instead of chat.messages
     chat.messages.push(userPrompt);
 
-    // Get AI response
     const response = await openai.chat.completions.create({
       model: "deepseek/deepseek-chat-v3-0324:free",
       store: true,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      messages: [{ role: "user", content: prompt }],
     });
 
     const assistantMessage: Message = {
@@ -84,9 +75,19 @@ export async function POST(req: NextRequest) {
       timeStamp: Date.now(),
     };
 
-    // Add AI response to chat
+    // Use chat.message instead of chat.messages
     chat.messages.push(assistantMessage);
-    await chat.save();
+
+    // Save and handle errors
+    try {
+      await chat.save();
+    } catch (saveError) {
+      console.error("Error saving chat:", saveError);
+      return NextResponse.json(
+        { error: "Failed to save chat" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       status: 200,

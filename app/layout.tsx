@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./prism.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-
 import { AppProvider } from "@/context/AppContext";
 import { Toaster } from "sonner";
 

@@ -1,3 +1,4 @@
+"use client";
 import { cn } from "@/lib/utils";
 import { assets } from "@/public/assets";
 import Image from "next/image";
@@ -7,13 +8,26 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Markdown from "react-markdown";
+import Prism from "prismjs";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface MessageProps {
   role: string;
   content: string;
+  loading?: boolean;
 }
 
-const Message = ({ role, content }: MessageProps) => {
+const Message = ({ role, content, loading }: MessageProps) => {
+  useEffect(() => {
+    Prism.highlightAll();
+  }, [content]); // Highlight code blocks
+
+  const copyText = () => {
+    navigator.clipboard.writeText(content);
+    toast.success("Text copied to clipboard!");
+  };
   return (
     <TooltipProvider>
       <div className="flex flex-col items-center w-full max-w-3xl text-sm p-3">
@@ -74,6 +88,7 @@ const Message = ({ role, content }: MessageProps) => {
                           alt="copy"
                           width={20}
                           height={20}
+                          onClick={copyText}
                           className="w-4 cursor-pointer"
                         />
                       </TooltipTrigger>
@@ -132,7 +147,16 @@ const Message = ({ role, content }: MessageProps) => {
                   className="w-9 h-9 p-1 border border-white/15 rounded-full"
                 />
                 <div className="space-y-4 w-full overflow-auto break-words">
-                  {content}
+                  {loading && (
+                    <>
+                      <div className="flex flex-row gap-2">
+                        <div className="w-4 h-4 rounded-full bg-blue-700 animate-bounce [animation-delay:.7s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-blue-700 animate-bounce [animation-delay:.3s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-blue-700 animate-bounce [animation-delay:.7s]"></div>
+                      </div>
+                    </>
+                  )}
+                  {<Markdown>{content}</Markdown>}
                 </div>
               </div>
             )}

@@ -17,18 +17,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import axios from "axios";
 import { toast } from "sonner";
+import { useAppContext } from "@/context/AppContext";
+import axios from "axios";
+import { cn } from "@/lib/utils";
 
 interface chatLabelProps {
   chatTitle: string;
   id: string;
+  selectedChatId?: string;
 }
 
-const ChatLabel = ({ chatTitle, id }: chatLabelProps) => {
+const ChatLabel = ({ chatTitle, id, selectedChatId }: chatLabelProps) => {
   const [open, setOpen] = useState(false);
   const [actionType, setActionType] = useState<"edit" | "delete" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { fetchUserChats, setSelectedChat, chat } = useAppContext();
+
+  const selectChat = () => {
+    const chatData = chat.find((item) => item._id === id);
+    setSelectedChat(chatData!);
+  };
 
   const deleteChat = async () => {
     try {
@@ -37,8 +46,12 @@ const ChatLabel = ({ chatTitle, id }: chatLabelProps) => {
           id,
         },
       });
+      fetchUserChats();
+      selectChat();
+      setOpen(false);
       toast.success("Chat deleted successfully");
     } catch (error) {
+      console.error("Error deleting chat:", error);
       toast.error("Failed to delete chat");
     }
   };
@@ -49,19 +62,26 @@ const ChatLabel = ({ chatTitle, id }: chatLabelProps) => {
         id,
         newName: inputRef.current?.value || "",
       });
+      fetchUserChats();
+      selectChat();
+      setOpen(false);
       toast.success("Chat edited successfully");
     } catch (error) {
+      console.error("Error renaming chat:", error);
       toast.error("Failed to rename chat");
     }
   };
-
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DropdownMenu>
           <Button
+            onClick={selectChat}
             variant="ghost"
-            className="flex items-center justify-start w-full text-white/80 hover:bg-white/10 hover:text-white/100 rounded-[5px] text-sm font-medium py-2 px-4 transition-all duration-300 gap-2 group"
+            className={cn(
+              "flex items-center justify-start w-full text-white/80 hover:bg-white/10 hover:text-white/100 rounded-[5px] text-sm font-medium py-2 px-4 transition-all duration-300 gap-2 group",
+              selectedChatId === id && "bg-zinc-700/80 text-white/100"
+            )}
           >
             <div className="flex items-center justify-between w-full">
               <span> {chatTitle} </span>
@@ -161,6 +181,7 @@ const ChatLabel = ({ chatTitle, id }: chatLabelProps) => {
                 if (actionType === "edit") {
                   renameChat();
                 } else if (actionType === "delete") {
+                  // Call delete function
                   deleteChat();
                 }
                 setOpen(false);

@@ -1,4 +1,3 @@
-// PromptBox.tsx
 "use client";
 
 import { useAppContext } from "@/context/AppContext";
@@ -10,12 +9,20 @@ import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const PromptBox = () => {
+
+interface PromptBoxProps {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+}
+
+const PromptBox = ({ loading, setLoading }: PromptBoxProps) => {
   const [prompt, setPrompt] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
 
   const { user, chat, setChat, selectedChat, setSelectedChat } =
     useAppContext();
+
+    console.log("chat", chat);
+    
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -51,29 +58,23 @@ const PromptBox = () => {
         return;
       }
 
-      // Update both states atomically
-      setChat((prev) => {
-        const updatedChats = prev.map((chatItem) =>
-          chatItem._id === selectedChat._id
-            ? {
-                ...chatItem,
-                messages: Array.isArray(chatItem.messages)
-                  ? [...chatItem.messages, userPrompt]
-                  : [userPrompt], // Fallback to new array if messages is invalid
-              }
-            : chatItem
-        );
-
-        // Update selectedChat in sync with chat state
-        setSelectedChat((prevChat) => ({
-          ...prevChat!,
-          messages: Array.isArray(prevChat?.messages)
-            ? [...prevChat.messages, userPrompt]
-            : [userPrompt],
-        }));
-
-        return updatedChats;
+      // Update selectedChat with the user message
+      const updatedMessages = Array.isArray(selectedChat.messages)
+        ? [...selectedChat.messages, userPrompt]
+        : [userPrompt];
+      setSelectedChat({
+        ...selectedChat,
+        messages: updatedMessages,
       });
+
+      // Update the chat array to keep it in sync
+      setChat((prev) =>
+        prev.map((chatItem) =>
+          chatItem._id === selectedChat._id
+            ? { ...chatItem, messages: updatedMessages }
+            : chatItem
+        )
+      );
 
       setPrompt(""); // Clear prompt after successful state update
 
@@ -90,30 +91,21 @@ const PromptBox = () => {
           timeStamp: Date.now(),
         };
 
-        // Update both states atomically again
-        setChat((prev) => {
-          const updatedChats = prev.map((chatItem) =>
-            chatItem._id === selectedChat._id
-              ? {
-                  ...chatItem,
-                  messages: Array.isArray(chatItem.messages)
-                    ? [...chatItem.messages, assistantPrompt]
-                    : [assistantPrompt],
-                }
-              : chatItem
-          );
-
-          setSelectedChat((prevChat) => ({
-            ...prevChat!,
-            messages: Array.isArray(prevChat?.messages)
-              ? [...prevChat.messages, assistantPrompt]
-              : [assistantPrompt],
-          }));
-
-          return updatedChats;
+        // Update selectedChat with the assistant response
+        const newMessages = [...updatedMessages, assistantPrompt];
+        setSelectedChat({
+          ...selectedChat,
+          messages: newMessages,
         });
 
-        toast.success("Message sent successfully!");
+        // Update the chat array to keep it in sync
+        setChat((prev) =>
+          prev.map((chatItem) =>
+            chatItem._id === selectedChat._id
+              ? { ...chatItem, messages: newMessages }
+              : chatItem
+          )
+        );
       } else {
         throw new Error("Invalid response from server");
       }
