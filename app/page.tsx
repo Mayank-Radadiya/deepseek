@@ -19,7 +19,7 @@ interface ChatMessage {
 export default function Home() {
   const [message, setMessage] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const { selectedChat, fetchUserChats } = useAppContext();
+  const { selectedChat } = useAppContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Update messages when selectedChat changes
@@ -94,8 +94,6 @@ export default function Home() {
         >
           <PromptBox loading={loading} setLoading={setLoading} />
         </div>
-
-        <button onClick={fetchUserChats}>click</button>
       </main>
     </div>
   );
