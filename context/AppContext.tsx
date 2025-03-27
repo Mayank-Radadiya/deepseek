@@ -68,10 +68,8 @@ export const AppProvider = ({ children }: AppContextProps) => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Chat created successfully!");
       await fetchUserChats();
     } catch (error) {
-      toast.error("Failed to create chat.");
       console.error("Error creating chat:", error);
     } finally {
       setIsCreatingChat(false);
@@ -114,11 +112,8 @@ export const AppProvider = ({ children }: AppContextProps) => {
       } else {
         setSelectedChat(chatToSelect);
       }
-
-      toast.success("Chats fetched successfully!");
     } catch (error) {
       console.error("Error fetching chats:", error);
-      toast.error("Failed to fetch chats.");
     } finally {
       setIsLoadingChats(false);
     }
